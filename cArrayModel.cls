@@ -1536,14 +1536,48 @@ Sub SortAdvanced(ByRef Ary() As Variant, _
     Next SortLevel
 End Sub
 
-'Sub ClearUsedRange(ByVal WS As Worksheet, _
-'                   Optional ByVal HasHeaders As Boolean = False)
-'    'Simple support procedure, takes a worksheet object and clears the entire used range
-'    'through the implicit Worksheet.Usedrange() property.
-'    '(NOTE: THERE ARE SOME CASES OF THIS PROPERTY NOT BEING COMPLETELY ACCURATE! IN THESE
-'    ' CASES THE CLEAR SHOULD STILL WORK FINE, ONLY DELETING MORE THAN EXISTS.)
-'
-'End Sub
+Sub ClearUsedRange(ByVal WS As Worksheet, _
+                   Optional ByVal HasHeaders As Boolean = False)
+    'Simple support procedure, takes a worksheet object and clears the entire used range
+    'through the implicit Worksheet.Usedrange() property.
+    '(NOTE: THERE ARE SOME CASES OF THIS PROPERTY NOT BEING COMPLETELY ACCURATE! IN THESE
+    ' CASES THE CLEAR SHOULD STILL WORK FINE, ONLY DELETING EMPTY CELLS.)
+    Dim FirstRow As Long
+    Dim LastRow As Long
+    Dim FirstCol As Long
+    Dim LastCol As Long
+    'Select the second row if the worksheet contains headers.
+    If HasHeaders = True Then
+        FirstRow = 2
+    Else
+        FirstRow = 1
+    End If
+    'Always start on column one.
+    FirstCol = 1
+    'Manage any errors that resulted from an invalid worksheet.
+    On Error GoTo ErrorHandler
+    LastRow = WS.UsedRange.Rows.Count
+    LastCol = WS.UsedRange.Columns.Count
+    If LastRow >= FirstRow Then
+        WS.Range(WS.Cells(FirstRow, FirstCol), _
+                 WS.Cells(LastRow, LastCol)).Delete xlShiftUp
+    End If
+    'Exit without error.
+    Exit Sub
+ErrorHandler:
+    Err.Raise Number:=Err.Number, _
+              Description:="Encountered within ClearUsedRange procedure. Error code native to VBA." & vbCrLf & vbCrLf & _
+              "Error Text: " & Err.Description
+End Sub
+
+Sub PasteArrayValuesToWorksheet(ByRef Ary() As Variant, _
+                                ByRef WS As Worksheet, _
+                                Optional ByVal StartRow As Long = 1, _
+                                Optional ByVal StartCol As Long = 1)
+    'Dumps the array into a worksheet, starting at the specified position.
+    WS.Range(WS.Cells(StartRow, StartCol), _
+             WS.Cells(UBound(Ary, 1) + StartRow - 1, UBound(Ary, 2) + StartCol - 1)).Value = Ary
+End Sub
 
 Function FindBin(ByVal Term As Variant, _
                  ByRef Ary() As Variant, _
